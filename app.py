@@ -14,15 +14,14 @@ max_beams = 4
 gen_kwargs = {"max_length": max_length, "num_beams": max_beams}
 
 # Function to predict captions
-def predict_step(image_paths):
-    images = []
-    for image_path in image_paths:
-        i_image = Image.open(image_path)
-        if i_image.mode != "RGB":
-            i_image = i_image.convert(mode="RGB")
-        images.append(i_image)
+def predict_step(images):
+    processed_images = []
+    for image in images:
+        if image.mode != "RGB":
+            image = image.convert(mode="RGB")
+        processed_images.append(image)
 
-    pixel_values = feature_extractor(images=images, return_tensors='pt').pixel_values
+    pixel_values = feature_extractor(images=processed_images, return_tensors='pt').pixel_values
     pixel_values = pixel_values.to(device)
 
     output_ids = model.generate(pixel_values, **gen_kwargs)
@@ -38,12 +37,13 @@ st.title("Image Captioning with ViT-GPT2")
 uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_image is not None:
-    st.image(uploaded_image, caption='Uploaded Image.', use_column_width=True)
+    image = Image.open(uploaded_image)
+    st.image(image, caption='Uploaded Image.', use_column_width=True)
     st.write("")
     st.write("Classifying...")
 
     # Perform prediction
-    predictions = predict_step([uploaded_image.name])
+    predictions = predict_step([image])
     st.write("Caption:")
     for pred in predictions:
         st.write(pred)
